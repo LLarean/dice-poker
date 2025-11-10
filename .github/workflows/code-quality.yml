@@ -38,7 +38,7 @@ jobs:
       - name: Check Line Length
         run: |
           MAX_LENGTH=120
-          LONG_LINES=$(find Assets/Scripts -name "*.cs" -exec awk -v max=$MAX_LENGTH 'length > max {print FILENAME":"NR": Line too long ("length" chars)"; errors++} END {exit errors}' {} +)
+          LONG_LINES=$(find Assets/DicePoker/Scripts -name "*.cs" -exec awk -v max=$MAX_LENGTH 'length > max {print FILENAME":"NR": Line too long ("length" chars)"; errors++} END {exit errors}' {} +)
           if [ $? -ne 0 ]; then
             echo "❌ Found lines longer than $MAX_LENGTH characters:"
             echo "$LONG_LINES"
