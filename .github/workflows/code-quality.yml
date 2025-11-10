@@ -27,7 +27,7 @@ jobs:
       # Checking trailing whitespaces
       - name: 🧹 Check Trailing Whitespace
         run: |
-          if grep -r '[[:blank:]]$' --include="*.cs" Assets/Scripts/; then
+          if grep -r '[[:blank:]]$' --include="*.cs" Assets/DicePoker/Scripts/; then
             echo "❌ Found trailing whitespace in C# files"
             exit 1
           else
@@ -38,7 +38,7 @@ jobs:
       - name: Check Line Length
         run: |
           MAX_LENGTH=120
-          LONG_LINES=$(find Assets/DicePokerScripts -name "*.cs" -exec awk -v max=$MAX_LENGTH 'length > max {print FILENAME":"NR": Line too long ("length" chars)"; errors++} END {exit errors}' {} +)
+          LONG_LINES=$(find Assets/DicePoker/Scripts -name "*.cs" -exec awk -v max=$MAX_LENGTH 'length > max {print FILENAME":"NR": Line too long ("length" chars)"; errors++} END {exit errors}' {} +)
           if [ $? -ne 0 ]; then
             echo "❌ Found lines longer than $MAX_LENGTH characters:"
             echo "$LONG_LINES"
@@ -50,7 +50,7 @@ jobs:
       # Checking TODO comments
       - name: Count TODOs
         run: |
-          TODO_COUNT=$(grep -r "TODO" Assets/Scripts --include="*.cs" | wc -l || echo "0")
+          TODO_COUNT=$(grep -r "TODO" Assets/DicePoker/Scripts --include="*.cs" | wc -l || echo "0")
           echo "## 📝 Technical Debt Report" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**TODO comments found:** $TODO_COUNT" >> $GITHUB_STEP_SUMMARY
@@ -80,10 +80,10 @@ jobs:
           echo "## 🧮 Code Complexity Report" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
-          # Простая эвристика: считаем if/for/while в методах
-          # В реальности используйте lizard или подобные инструменты
+          # A simple heuristic: we consider if/for/while in the methods
+          # In reality, use lizard or similar tools.
           
-          COMPLEX_METHODS=$(find Assets/Scripts -name "*.cs" -exec grep -l "if.*if.*if.*if" {} \; | wc -l)
+          COMPLEX_METHODS=$(find Assets/DicePoker/Scripts -name "*.cs" -exec grep -l "if.*if.*if.*if" {} \; | wc -l)
           
           echo "**Methods with high complexity:** $COMPLEX_METHODS" >> $GITHUB_STEP_SUMMARY
           
@@ -109,8 +109,8 @@ jobs:
           echo "## 🏷️ Naming Convention Report" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
-          # Проверка приватных полей с underscore
-          NO_UNDERSCORE=$(grep -rn "private.*\s[a-z][a-zA-Z]*;" Assets/Scripts --include="*.cs" | grep -v "_" || true)
+          # Checking private fields with underscore
+          NO_UNDERSCORE=$(grep -rn "private.*\s[a-z][a-zA-Z]*;" Assets/DicePoker/Scripts --include="*.cs" | grep -v "_" || true)
           
           if [ -n "$NO_UNDERSCORE" ]; then
             echo "⚠️ **Found private fields without underscore prefix:**" >> $GITHUB_STEP_SUMMARY
@@ -122,7 +122,7 @@ jobs:
           fi
 
           # Checking PascalCase for public methods
-          LOWERCASE_METHODS=$(grep -rn "public.*\s[a-z][a-zA-Z]*(" Assets/Scripts --include="*.cs" || true)
+          LOWERCASE_METHODS=$(grep -rn "public.*\s[a-z][a-zA-Z]*(" Assets/DicePoker/Scripts --include="*.cs" || true)
           
           if [ -n "$LOWERCASE_METHODS" ]; then
             echo "" >> $GITHUB_STEP_SUMMARY
