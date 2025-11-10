@@ -1,0 +1,135 @@
+name: Code Quality
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  # ═══════════════════════════════════════════════════════
+  # Checking the formatting of the code
+  # ═══════════════════════════════════════════════════════
+  code-style:
+    name: Check Code Style
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      # Checking .editorconfig
+      - name: EditorConfig Checker
+        uses: editorconfig-checker/action-editorconfig-checker@main
+        with:
+          version: latest
+
+      # Checking trailing whitespaces
+      - name: 🧹 Check Trailing Whitespace
+        run: |
+          if grep -r '[[:blank:]]$' --include="*.cs" Assets/Scripts/; then
+            echo "❌ Found trailing whitespace in C# files"
+            exit 1
+          else
+            echo "✅ No trailing whitespace found"
+          fi
+
+      # Checking the length of strings
+      - name: Check Line Length
+        run: |
+          MAX_LENGTH=120
+          LONG_LINES=$(find Assets/Scripts -name "*.cs" -exec awk -v max=$MAX_LENGTH 'length > max {print FILENAME":"NR": Line too long ("length" chars)"; errors++} END {exit errors}' {} +)
+          if [ $? -ne 0 ]; then
+            echo "❌ Found lines longer than $MAX_LENGTH characters:"
+            echo "$LONG_LINES"
+            exit 1
+          else
+            echo "✅ All lines within $MAX_LENGTH characters"
+          fi
+
+      # Checking TODO comments
+      - name: Count TODOs
+        run: |
+          TODO_COUNT=$(grep -r "TODO" Assets/Scripts --include="*.cs" | wc -l || echo "0")
+          echo "## 📝 Technical Debt Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**TODO comments found:** $TODO_COUNT" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "$TODO_COUNT" -gt 20 ]; then
+            echo "⚠️ **Warning:** High number of TODOs. Consider addressing some." >> $GITHUB_STEP_SUMMARY
+          elif [ "$TODO_COUNT" -eq 0 ]; then
+            echo "✅ **Excellent:** No TODO comments!" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ Technical debt under control" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  # ═══════════════════════════════════════════════════════
+  # Code Complexity Analysis
+  # ═══════════════════════════════════════════════════════
+  complexity:
+    name: Code Complexity
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      # Checking cyclomatic complexity
+      - name: Check Method Complexity
+        run: |
+          echo "## 🧮 Code Complexity Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Простая эвристика: считаем if/for/while в методах
+          # В реальности используйте lizard или подобные инструменты
+          
+          COMPLEX_METHODS=$(find Assets/Scripts -name "*.cs" -exec grep -l "if.*if.*if.*if" {} \; | wc -l)
+          
+          echo "**Methods with high complexity:** $COMPLEX_METHODS" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "$COMPLEX_METHODS" -gt 5 ]; then
+            echo "⚠️ Consider refactoring complex methods" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ Code complexity looks good" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  # ═══════════════════════════════════════════════════════
+  # Naming verification
+  # ═══════════════════════════════════════════════════════
+  naming:
+    name: Naming Conventions
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Check Naming Conventions
+        run: |
+          echo "## 🏷️ Naming Convention Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Проверка приватных полей с underscore
+          NO_UNDERSCORE=$(grep -rn "private.*\s[a-z][a-zA-Z]*;" Assets/Scripts --include="*.cs" | grep -v "_" || true)
+          
+          if [ -n "$NO_UNDERSCORE" ]; then
+            echo "⚠️ **Found private fields without underscore prefix:**" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "$NO_UNDERSCORE" | head -10 >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ All private fields follow naming convention" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Checking PascalCase for public methods
+          LOWERCASE_METHODS=$(grep -rn "public.*\s[a-z][a-zA-Z]*(" Assets/Scripts --include="*.cs" || true)
+          
+          if [ -n "$LOWERCASE_METHODS" ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "⚠️ **Found public methods not in PascalCase:**" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "$LOWERCASE_METHODS" | head -10 >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ All public methods follow PascalCase" >> $GITHUB_STEP_SUMMARY
+          fi
