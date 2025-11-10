@@ -38,7 +38,7 @@ jobs:
       - name: Check Line Length
         run: |
           MAX_LENGTH=120
-          LONG_LINES=$(find Assets/DicePoker/Scripts -name "*.cs" -exec awk -v max=$MAX_LENGTH 'length > max {print FILENAME":"NR": Line too long ("length" chars)"; errors++} END {exit errors}' {} +)
+          LONG_LINES=$(find Assets/DicePokerScripts -name "*.cs" -exec awk -v max=$MAX_LENGTH 'length > max {print FILENAME":"NR": Line too long ("length" chars)"; errors++} END {exit errors}' {} +)
           if [ $? -ne 0 ]; then
             echo "❌ Found lines longer than $MAX_LENGTH characters:"
             echo "$LONG_LINES"
@@ -133,3 +133,15 @@ jobs:
           else
             echo "✅ All public methods follow PascalCase" >> $GITHUB_STEP_SUMMARY
           fi
+          
+  # ═══════════════════════════════════════════════════════
+  # Final status report
+  # ═══════════════════════════════════════════════════════
+  quality-check:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    needs: [code-style, complexity, naming]
+    
+    steps:
+      - name: All checks passed
+        run: echo "✅ All code quality checks passed"
