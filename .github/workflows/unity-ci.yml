@@ -86,7 +86,7 @@ jobs:
       # Uploading artifacts
       # ─────────────────────────────────────────────────────
       - name: 📦 Upload Test Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: Test-Results-EditMode
@@ -94,7 +94,7 @@ jobs:
           retention-days: 7
 
       - name: 📦 Upload Coverage Report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: Coverage-Report
@@ -177,7 +177,7 @@ jobs:
           customParameters: '-nographics'
 
       - name: 📦 Upload PlayMode Test Results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: Test-Results-PlayMode
