@@ -184,7 +184,7 @@ jobs:
           path: artifacts/
           retention-days: 7
 
-  # ═══════════════════════════════════════════════════════
+    # ═══════════════════════════════════════════════════════
   # JOB 3: PR Comment Bot with metrics
   # ═══════════════════════════════════════════════════════
   pr-comment:
@@ -235,11 +235,25 @@ jobs:
               console.log('Could not read test results:', e);
             }
             
-            // Code Statistics
-            const scriptFiles = fs.readdirSync('Assets/Scripts', {recursive: true})
-              .filter(f => f.endsWith('.cs')).length;
-            const testFiles = fs.readdirSync('Assets/Tests', {recursive: true})
-              .filter(f => f.endsWith('.cs')).length;
+            // Code Statistics - ОБНОВЛЕНЫ ПУТИ!
+            const countFiles = (dir) => {
+              try {
+                const files = fs.readdirSync(dir, { recursive: true, withFileTypes: true });
+                return files.filter(file => file.isFile() && file.name.endsWith('.cs')).length;
+              } catch (e) {
+                return 0;
+              }
+            };
+            
+            const scriptFiles = countFiles('Assets/DicePoker/Scripts');
+            const editModeTestFiles = countFiles('Assets/DicePoker/Tests/EditMode');
+            const playModeTestFiles = countFiles('Assets/DicePoker/Tests/PlayMode');
+            const totalTestFiles = editModeTestFiles + playModeTestFiles;
+            
+            // Определяем статусы ДО создания строки
+            const buildStatus = '${{ needs.test-editmode.result }}' === 'success' ? '✅ Success' : '❌ Failed';
+            const testStatus = '${{ needs.test-editmode.result }}' === 'success' ? '✅ Passed' : '❌ Failed';
+            const nextSteps = failedTests !== '0' ? '- ⚠️ Fix failing tests before merging' : '- ✅ Ready to merge after review';
             
             // Creating comment
             const comment = `
@@ -252,33 +266,39 @@ jobs:
             | ✅ Passed | ${passedTests} |
             | ❌ Failed | ${failedTests} |
             | 📊 Coverage | ${coverage} |
-            | Build Status | ${{ needs.test-editmode.result == 'success' ? '✅ Success' : '❌ Failed' }} |
+            | Build Status | ${buildStatus} |
             
-            ### 📊 Code Changes
+            ### 📊 Code Statistics
             | Metric | Value |
             |--------|-------|
             | Files Changed | ${{ github.event.pull_request.changed_files }} |
             | Lines Added | <span style="color:green">+${{ github.event.pull_request.additions }}</span> |
             | Lines Removed | <span style="color:red">-${{ github.event.pull_request.deletions }}</span> |
             | Script Files | ${scriptFiles} |
-            | Test Files | ${testFiles} |
+            | EditMode Tests | ${editModeTestFiles} |
+            | PlayMode Tests | ${playModeTestFiles} |
+            | Total Test Files | ${totalTestFiles} |
             
             ### 🔍 Quality Checks
             | Check | Status |
             |-------|--------|
-            | Unit Tests | ${{ needs.test-editmode.result == 'success' ? '✅ Passed' : '❌ Failed' }} |
+            | Unit Tests | ${testStatus} |
             
             <details>
             <summary>📈 Detailed Information</summary>
             
-            #### Changed Files by Type
-            - Models: TBD
-            - Views: TBD
-            - Controllers: TBD
-            - Tests: TBD
+            #### Project Structure
+            - **Scripts**: ${scriptFiles} files (Assets/DicePoker/Scripts)
+            - **EditMode Tests**: ${editModeTestFiles} files (Assets/DicePoker/Tests/EditMode)
+            - **PlayMode Tests**: ${playModeTestFiles} files (Assets/DicePoker/Tests/PlayMode)
+            
+            #### Test Coverage
+            - ${editModeTestFiles > 0 ? '✅' : '❌'} EditMode tests ${editModeTestFiles > 0 ? 'available' : 'not found'}
+            - ${playModeTestFiles > 0 ? '✅' : '⏸️'} PlayMode tests ${playModeTestFiles > 0 ? 'available' : 'not configured'}
             
             #### Next Steps
-            ${failedTests !== '0' ? '- ⚠️ Fix failing tests before merging' : '- ✅ Ready to merge after review'}
+            ${nextSteps}
+            ${playModeTestFiles === 0 ? '- ⏸️ Consider adding PlayMode tests for gameplay validation' : ''}
             
             </details>
             
